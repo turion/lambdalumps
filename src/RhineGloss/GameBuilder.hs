@@ -41,7 +41,11 @@ renderGameRhineGloss difficultyInput = flowGloss
                 $ glossRhine
 
 game'' :: GlossSyncSF Gamestate
-game'' = timeInfoOf sinceStart >>> arr (stepThru getGamestate) >>> arr renderGamestate
+-- game'' = timeInfoOf sinceStart >>> arr (stepThru getGamestate) >>> arr renderGamestate
+game'' = feedback getGamestate $ proc (events, gamestate) -> do
+  timeStep     <- timeInfoOf sinceTick     -< ()
+  newGamestate <- arr $ uncurry $ stepThru -< (gamestate, timeStep)
+  returnA                                  -< (renderGamestate newGamestate, newGamestate)
 
 glossRhine :: GlossRhine Gamestate
 glossRhine = buildGlossRhine handleEvent game''

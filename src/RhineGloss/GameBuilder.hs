@@ -40,15 +40,15 @@ renderGameRhineGloss difficultyInput = flowGloss
                 difficultyInput
                 $ glossRhine
 
-game'' :: GlossSyncSF Gamestate
+game'' :: GlossSyncSF Event
 -- game'' = timeInfoOf sinceStart >>> arr (stepThru getGamestate) >>> arr renderGamestate
 game'' = feedback getGamestate $ proc (events, gamestate) -> do
-  timeStep     <- timeInfoOf sinceTick     -< ()
-  newGamestate <- arr $ uncurry $ stepThru -< (gamestate, timeStep)
-  returnA                                  -< (renderGamestate newGamestate, newGamestate)
+  timeStep <- timeInfoOf sinceTick -< ()
+  let newState = foldr (.) id (parseEvent <$> events) $ stepThru gamestate timeStep
+  returnA                          -< (renderGamestate newState, newState)
 
-glossRhine :: GlossRhine Gamestate
-glossRhine = buildGlossRhine handleEvent game''
+glossRhine :: GlossRhine Event
+glossRhine = buildGlossRhine Just game''
 
 ---- | The main 'SyncSF' governing events, game logic and graphics.
 --   An event is produced whenever the user presses a key
